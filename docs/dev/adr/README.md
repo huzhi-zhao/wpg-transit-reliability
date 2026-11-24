@@ -14,6 +14,6 @@ ADR 不限于技术选型：口径决策（哪个字段代表什么）、范围�
 
 | # | 标题 | 类别 | 状态 | 日期 |
 |---|---|---|---|---|
-| [0001](0001-on-time-archive-as-primary-source.md) | 主数据源选公交准点存档 | 数据源 | Accepted | 2026-11-24 |
+| [0001](0001-on-time-archive-as-primary-source.md) | 主数据源选公交准点存档 | 数据源 | Proposed（待 P0） | 2026-11-24 |
 | [0002](0002-trip-reliability-not-realtime-eta.md) | 产品回答“这一班多靠得住”，不做实时到站 | 范围 | Accepted | 2026-11-24 |
 | [0003](0003-features-known-the-day-before.md) | 特征只用前一天已知的信息，311 不进 v1 | 口径 | Accepted | 2026-11-24 |

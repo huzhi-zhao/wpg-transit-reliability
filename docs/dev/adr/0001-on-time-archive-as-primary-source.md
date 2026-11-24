@@ -1,6 +1,10 @@
 # ADR 0001：主数据源选公交准点存档
 
-> **Status**: Accepted · **Date**: 2026-11-24
+> **Status**: Proposed · **Date**: 2026-11-24
+>
+> 🔴 2026-11-24 更正：状态由 Accepted 改为 Proposed，依据：本决策来自数据源初筛，
+> 尚未经过 P0 可行性（[roadmap.md](../roadmap.md)）。P0 通过后改为 Accepted；
+> 不通过则按 roadmap 里的出路另写 ADR 取代本篇。
 
 决策：项目的主数据源是 City of Winnipeg 的 Transit On-Time Performance
 （存档 `cymk-nyei` + 最近一期 `gp3k-am4u`）。
