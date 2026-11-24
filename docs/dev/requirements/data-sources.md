@@ -74,6 +74,23 @@ curl -s "https://data.winnipeg.ca/resource/cymk-nyei.json?\$select=start_date,ro
 结论：**改造后的记录可以靠时刻表还原 `trip_id` 和站序**。历史各期需要对应时期的 GTFS，
 能否拿到是 P0 的检查项。
 
+### 2.1 历史 GTFS（P0 的 G3，未完成）
+
+2026-11-24 查到的情况，源实测：
+
+- 官方地址只提供当前一期（2026-09-06 至 2026-12-12）。
+- Internet Archive 存有 2025-09-08 抓取的一期，有效期 2025-08-31 至 2025-12-13。
+- Mobility Database 收录了这个 feed（`mdb-717`），Transitland 也有；两者的历史版本列表和下载都要账号或 API key，
+  不登录拿不到，有没有 2025-12-14 之后的冬季那一期还不知道。
+- 因此 2025-07-01 至 2025-08-30、2025-12-14 至 2026-09-05 两段暂时没有时刻表来源，
+  窗口 B（2025-12 至 2026-03）的大部分日子联结不了。
+
+```bash
+curl -s "https://web.archive.org/cdx/search/cdx?url=gtfs.winnipegtransit.com/google_transit.zip&output=json&from=2025&fl=timestamp,statuscode,digest,length"
+curl -sfL -o google_transit.zip "https://web.archive.org/web/20250908020001id_/http://gtfs.winnipegtransit.com/google_transit.zip"
+curl -sfL https://files.mobilitydatabase.org/feeds_v2.csv | grep -i winnipeg
+```
+
 ## 3. 缺班
 
 > 本节数字除特别注明外，均为 **2026-11-24** 对窗口 A 测得：最近一期表 `gp3k-am4u` 的全部
@@ -166,6 +183,24 @@ uv run probe/window_a.py       # 输出本节和 §5 的全部数字，另存 da
 - **铁路平交道口**：班次下游的平交道口数量，固定特征。道口位置来自 Transport Canada
   的道口清单（未测）；火车时刻不公开。
 - **河水位和春汛封路** `tgrf-v2zc`：沿河道路的季节性封闭。
+
+**恶劣天气日（P0 的 G4，不通过）**
+
+2026-11-24 按 [P0 可行性探针](../design/20261124-feasibility-probe.md) §2.3 登记的定义计数，
+2025-07-01 至 2026-11-23 的工作日（扣除法定假日和两张表都没覆盖的 2026-10-01 至 10-09）共 340 天：
+
+- 恶劣天气日 **11 天**，门槛 15 天。其中降雪 ≥ 5 cm 2 天，最低温 ≤ −30 °C 3 天，冻雨 6 天。
+- 窗口 B（2025-12 至 2026-03）83 个工作日里 8 天；窗口 A 29 个工作日里 0 天。
+- 只作参考、不在定义里：冻毛毛雨 3 天，冻雾 6 天。第一次计数时把含 “Freezing” 的描述都算成了冻雨（19 天），
+  与登记的“冻雨”不符，已改为只认 “Freezing Rain”。
+- **降雪量这一项可能偏少**：Open-Meteo 在 2025-10 至 2026-04 只有 2 天 ≥ 5 cm，最大 6.1 cm；
+  同期 ECCC `502S001` 的积雪深度有 6 天一日涨 5 cm 以上（最多 12 cm），Open-Meteo 在这几天及前两天大多只给 0–4 cm。
+  积雪深度也受风吹积雪影响，两边谁更准没法判断。定义是事先登记的，这里不改，只记下这个测量问题。
+- 冬季天气描述大多每 3 小时才有一条（12,249 个逐时记录里 6,718 个没有描述），短时冻雨可能漏记。
+
+```bash
+uv run probe/weather_days.py     # 逐日结果另存 data/out/weather_days.csv
+```
 
 **实时修正阶段才用（次日拿不到）**
 
