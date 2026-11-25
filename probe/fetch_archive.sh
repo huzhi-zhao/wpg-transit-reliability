@@ -19,7 +19,7 @@ for r in json.load(sys.stdin):
         print(r['start_date'][:7], r['rows'], r['url'])
 " | while read -r month rows url; do
   f="$out/$(basename "$url")"
-  curl -sfL -o "$f" "$url"
+  [[ -s "$f" ]] || curl -sfL -o "$f" "$url"
   got=$(( $(unzip -p "$f" | wc -l) - 1 ))
   printf '%s\t%s\t%s\n' "$month" "$rows" "$got" | tee -a "$out/_counts.tsv"
 done

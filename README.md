@@ -4,9 +4,10 @@
 
 This project estimates, for a single scheduled bus trip, the probability that it
 reaches a rider's stop by a deadline the rider chooses, and the risk that it
-leaves the boarding stop before the rider gets there. It learns from nine years
-of stop-level on-time records published by the City of Winnipeg, joined with the
-published schedule, weather and other conditions that are known the day before.
+leaves the boarding stop before the rider gets there. It learns from the
+stop-level on-time records published by the City of Winnipeg, using only what is
+known the day before. The first version uses those records alone; the published
+schedule, weather and other conditions are added later.
 
 Real-time apps answer "when will the next bus come". This project answers a
 planning question asked the evening before: how reliable is this particular
@@ -16,9 +17,9 @@ trip, and would an earlier trip or another route lower the risk?
 
 ## Status
 
-The project is in its planning stage. The data source has been chosen and its
-structure measured; a feasibility check on record coverage comes next. No
-pipeline, model or application exists yet.
+The feasibility check is complete: the data source supports per-departure
+probabilities for weekday daytime service, and the scope of the first version is
+set. No pipeline, model or application exists yet.
 
 ## Data
 

@@ -1,10 +1,22 @@
 # ADR 0001：主数据源选公交准点存档
 
-> **Status**: Proposed · **Date**: 2026-11-24
+> **Status**: Accepted · **Date**: 2026-11-24
 >
 > 🔴 2026-11-24 更正：状态由 Accepted 改为 Proposed，依据：本决策来自数据源初筛，
 > 尚未经过 P0 可行性（[roadmap.md](../roadmap.md)）。P0 通过后改为 Accepted；
 > 不通过则按 roadmap 里的出路另写 ADR 取代本篇。
+>
+> 🔴 2026-11-25 更正：§4 第一条“从第一天起依赖 GTFS 还原班次”不再适用于 MVP，
+> MVP 只用本数据集，见 [ADR 0005](0005-mvp-on-time-records-only.md)。主数据源的选择不变。
+>
+> 🔴 2026-11-25 更正：P0 已按 [探针](../design/20261124-feasibility-probe.md) §2.6 的判定规则给出结论，**Go**，
+> 状态改为 Accepted。依据 [data-sources.md](../requirements/data-sources.md) §2.1、§3、§4：
+> - G1 覆盖率通过（72 条线路里 68 条达标）。
+> - G2b 时段不通过，已按事先写好的出路收窄范围，见 [ADR 0004](0004-mvp-trips-departing-before-1800.md)。
+> - G2a 恶劣天气日覆盖率按门槛通过，但 95% 区间下限 −9.996 与门槛 −10 只差 0.004 个百分点，是贴边通过。
+> - G3 历史时刻表通过（365 个工作日全有，逐月联结率 ≥ 99.95%），按 ADR 0005 只影响 MVP 之后。
+> - G4 恶劣天气日 11 天，不通过；按规则只降低结论强度，“恶劣天气日好于基线”不再作为可检验的假设
+>   （ADR 0005 已把 MVP 的天气分层整个去掉）。
 
 决策：项目的主数据源是 City of Winnipeg 的 Transit On-Time Performance
 （存档 `cymk-nyei` + 最近一期 `gp3k-am4u`）。
