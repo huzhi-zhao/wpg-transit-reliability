@@ -4,6 +4,23 @@
 > （`data.winnipeg.ca`，Socrata SODA API，实时）和 Winnipeg Transit 公开的 GTFS 测得，
 > 命令见各节。上游会变，引用前看测量时间。
 
+## 0. MVP 用到的数据一览
+
+MVP 的数据是一张主表加三张小表（[ADR 0007](../adr/0007-mvp-one-route-direction.md)、[ADR 0008](../adr/0008-mvp-small-side-tables.md)），
+全部放在 `data/mvp/`，在数据准备阶段合并。2026-11-27 对导出文件计数。
+
+| 文件 | 来源 | 一行是 | 行数 | 大小 | 时间范围 | 字段与类型 | 合并键 |
+|---|---|---|---|---|---|---|---|
+| `route91_st_norbert.csv`（主表） | City of Winnipeg 门户：存档 [`cymk-nyei`](https://data.winnipeg.ca/d/cymk-nyei) + 最近一期 [`gp3k-am4u`](https://data.winnipeg.ca/d/gp3k-am4u) | 91 路往 St. Norbert 的一辆车离开一个站一次 | 80,032 | 7.7 MB | 2025-07-04 至 2026-11-23（缺 2026-10-01 至 10-09） | `deviation` 数值（秒，目标）；`scheduled_time` 日期时间；`stop_number` 类别（16 个）；`location` 坐标；`route_number`、`route_destination`、`day_type` 在本表中为常数或近似常数 | — |
+| `weather_daily.csv` | [Open-Meteo](https://open-meteo.com/) 历史 archive API，(49.78, −97.155) | 一天 | 511 | 26 KB | 2025-07-01 至 2026-11-23，无空缺 | 最高、最低气温，降水，降雨，降雪，最大风速：数值；`weather_code` 类别；`weather_text` 文本标签 | 日期 |
+| `calendar_daily.csv` | 曼省法定假日表；门户停车禁令 [`mfzv-893p`](https://data.winnipeg.ca/d/mfzv-893p) | 一天 | 511 | 21 KB | 同上 | 是否假日、假日前一天、假日后一天、主干道除雪禁令、居民区禁令：是否值 | 日期 |
+| `stop_ridership.csv` | 门户分站点客流 [`bv6q-du26`](https://data.winnipeg.ca/d/bv6q-du26) | 一个站点在一个时刻表季度、一个时段的工作日平均 | 320 | 19 KB | 五个季度，2025-06-29 至 2026-09-05 | 平均上车、下车人数：数值；`time_period` 类别（早、午间、晚高峰、晚上）；季度起止：日期区间 | 站点 + 时段 + 季度 |
+
+```bash
+uv run probe/export_mvp_slice.py     # 主表
+uv run probe/export_mvp_extras.py    # 三张小表
+```
+
 ## 1. 主数据源：Transit On-Time Performance
 
 门户上有两张表：
@@ -72,6 +89,33 @@ curl -s "https://data.winnipeg.ca/resource/cymk-nyei.json?\$select=start_date,ro
 
 ```bash
 uv run probe/unit_check.py
+```
+
+### 1.4 MVP 数据集：91 路往 St. Norbert
+
+[ADR 0007](../adr/0007-mvp-one-route-direction.md) 按数据质量挑这一段。2026-11-27 对本地文件测得：
+存档 2025-07 至 2026-09 的月度文件（转成 parquet，`probe/window_b.py`），加上最近一期表 2026-10-10 至 11-23 的逐日 CSV。
+只取 `Weekday`、计划离站早于 18:00，且日期是真正的工作日（周一至周五，且当天多数记录标 `Weekday`）。
+
+- **工作日的口径**：这段时间有 338 个真正的工作日（2025-07-02 至 2026-11-23）。
+  按“有 `Weekday` 记录的日期”数会多出 123 天，都是周末和假日夹着的少量 `Weekday` 行（与 §1.1 一致）。
+- **时刻表稳定性**：一个计划离站从第一次到最后一次出现跨过至少 300 个工作日，算“没有被改版打断”。
+  按这个口径，F、D、FX 开头的大线路只有 1–5% 的记录属于这样的计划离站，BLUE 16%；
+  551、223、642、91、39 等几条线路是 100%，整段时间没有改版。
+- **91 路**：偏差绝对值超过 3,600 秒的记录 0；同一天同一计划离站重复的 0.03%；
+  338 个工作日里只有 268 天有记录，多数线路是 330 天以上。
+- **两个方向**：
+  - 往 `St. Norbert`：79,612 行、16 个站，晚点超过 300 秒 4.96%、提前超过 60 秒 13.99%；
+    冬季（12 月至 3 月）晚点 4.95%，其余月份 4.97%。
+  - 往 `Baylor & Killarney`：122,549 行、25 个站，晚点 3.29%、提前 11.03%；冬季晚点 1.26%，其余月份 4.07%。
+  - 对照 642 路两个方向：晚点 1.7–2.3%、提前约 16%。
+- **方向从哪来**：存档 parquet 只留了线路、站点、时间、偏差，方向用最近一期表里的（站点，时分秒）→ 目的地对照补回；
+  91 路时刻表没改过，存档里每条记录都对得上，没有一个键对应两个目的地。
+- **导出的数据集**：只按 `Weekday` 和 18 时前筛选时是 80,032 行（多出的 420 行是非工作日的 `Weekday` 行，
+  留给数据准备阶段去掉），CSV 约 7.7 MB。2026-10-01 至 10-09 在存档和最近一期表之间没有数据。
+
+```bash
+uv run probe/route_quality.py
 ```
 
 ## 2. 班次重建：与 GTFS 联结
@@ -220,7 +264,15 @@ ADR 0004 原定按班次首站发车时间划线，MVP 不还原班次后改按�
 准入规则：只用前一天已知的信息（[ADR 0003](../adr/0003-features-known-the-day-before.md)）。
 “行数”列为 2026-11-24 的 `count(*)`；未写行数的尚未测。
 
-MVP 不接本节任何数据（[ADR 0005](../adr/0005-mvp-on-time-records-only.md)），下面的清单留给 MVP 之后。
+MVP 只接本节的天气、日历、停车禁令和客流四项（[ADR 0008](../adr/0008-mvp-small-side-tables.md)，导出的文件见 §0），其余留给 MVP 之后。
+2026-11-27 核对：
+
+- **施工和车道封闭 `h367-iifg`**：门户只保留当前和最近的记录，状态 `Current` 294 条、`Expired` 74 条（最早 2024-10-10）、
+  `Future` 100 条、`Today` 14 条；91 路沿线范围内与 2025-07 以后重叠的只有 3 条。历史不全，MVP 不用。
+- **停车禁令 `mfzv-893p`**：2025-07 以后 3 条：主干道除雪禁令 2025-12-03 至 2026-04-02，居民区禁令 2025-12-21 至 12-23、2026-02-26 至 02-28。
+- **客流 `bv6q-du26`**：91 路这 16 个站在 Summer 2025、Summer 2025 Special、Winter 2025、Spring 2026、Summer 2026 五个季度里都有，
+  工作日只有早、午间、晚高峰、晚上四个时段，时段的起止时间门户没有公布；Fall 2026（2026-09-06 起）还没有发布。
+- **天气**：Open-Meteo archive 2025-07-01 至 2026-11-23 的 511 天，七个日变量都没有空值。
 
 **原列为 MVP 候选，现移到 MVP 之后**
 
