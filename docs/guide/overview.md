@@ -28,30 +28,37 @@ before. It does not track vehicles or replace real-time arrival information.
 
 ## Approach
 
+The work follows CRISP-DM: business and data understanding were settled by the
+feasibility check. The first version is deliberately small. It takes one route in
+one direction and covers data understanding, data preparation, modeling and
+evaluation; deployment comes later.
+
 1. **Records.** The City of Winnipeg publishes, for every bus departing every
    stop, the scheduled time and the deviation from it in seconds. The archive
    reaches back to July 2017; the first version uses records from after the
    July 2025 network redesign.
-2. **Departures.** A rider's bus is identified by its route, direction, stop and
-   scheduled time. That is enough to find the same departure on every past
-   weekday, so the first version needs no other data source. The rider supplies
-   the scheduled time at both the boarding stop and the destination stop.
-3. **Features.** Everything is derived from the records themselves and limited to
-   what is known the day before: time of day and week, route and stop, the
-   departure's own history, and how late buses have been running over the last
-   few days. The last of these follows changes in weather or road work, a day
-   or two behind.
-4. **Model.** Several models are trained across all routes and stops and combined
-   into an ensemble; route and stop are features, not separate models.
-   Predictions are stored as quantiles of the deviation for each scheduled
-   departure, so any deadline can be answered by lookup.
-5. **Evaluation.** Probabilities are judged on calibration (does "80%" come true
-   about 80% of the time) against a baseline of historical on-time frequency for
-   the same departure, with results reported by time of day, route and month,
-   including winter.
+2. **One route, one direction.** Route 91 towards St. Norbert: 16 stops, weekday
+   departures scheduled before 18:00, about 80,000 rows. It was chosen on data
+   quality alone: its timetable did not change over the period, and it has
+   essentially no erroneous records.
+3. **Departures.** A departure is identified by its stop and scheduled time. That
+   is enough to find the same departure on every past weekday, without the
+   published schedule.
+4. **Features.** Everything is limited to what is known the day before. From the
+   records themselves: time of day and week, the stop, the
+   departure's own history, and how late buses on the route have been running
+   over the last few days. Four small outside tables are joined in during data
+   preparation: daily weather (the previous day's), statutory holidays, snow
+   parking bans, and average boardings per stop.
+5. **Model and evaluation.** A historical-frequency baseline, a linear model and a
+   tree model each predict the chance that a departure is more than a set number
+   of seconds late, or early. They are compared on a later stretch of time that
+   none of them was trained on, using calibration (does "80%" come true about
+   80% of the time).
 
-Joining the records to the published schedule, which recovers whole trips, and
-adding weather and other outside data come after the first version.
+More routes, any deadline the rider chooses, an ensemble of models, a query
+tool, joining the records to the published schedule, weather forecasts, road
+work and school calendars all come after the first version.
 
 ## Current scope
 
@@ -64,8 +71,10 @@ are recorded far less often than daytime ones. On the worst winter days a few
 more trips go missing, while the ones recorded run later than usual, so bad days
 are somewhat under-represented in the history.
 
-The first version will produce arrival risk and missed-bus risk for a small set
-of routes, for weekday departures scheduled before 18:00 (evening buses are
-recorded too sparsely to model yet), using the on-time records alone from after
-Winnipeg Transit's 2025 network redesign. Alternatives, schedule and weather
-data, and a rider-facing application come after it.
+The first version produces, for one route in one direction (route 91 towards
+St. Norbert, weekday departures scheduled before 18:00, records from after the
+2025 network redesign), the probability that a departure runs late or leaves
+early by more than a fixed margin, and an honest evaluation of those
+probabilities. On this route some whole days have no records, which the data
+preparation has to handle. Results hold for this route only. Everything else
+comes after it.

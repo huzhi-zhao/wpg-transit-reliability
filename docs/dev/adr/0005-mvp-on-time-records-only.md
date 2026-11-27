@@ -6,6 +6,12 @@
 > Mobility Database 上 2025-07 以来各期首尾相接，逐月联结率 ≥ 99.95%，依据 [data-sources.md](../requirements/data-sources.md) §2.1。
 > 这一条的成本比写的低：仍要维护第三方来源、按日期切换版本，但不再有找不到的风险。其余理由不受影响；
 > 决策本身没有因此重新讨论。
+>
+> 🔴 2026-11-27 更正：[ADR 0007](0007-mvp-one-route-direction.md) 把 MVP 的范围进一步收窄到 91 路往 St. Norbert 一个方向，
+> 本篇 §4 里按线路分层、收缩基线等后果随之移到 v2。只用准点数据集、预测单位是计划离站这两条不变。
+>
+> 🔴 2026-11-27 更正：[ADR 0008](0008-mvp-small-side-tables.md) 在 MVP 里接入天气、法定假日、停车禁令、客流四个来源的小表，
+> 本篇“不接外部数据”只对这四个放开；不联结 GTFS 不变。
 
 决策：MVP 的训练、评估和查询只用 Transit On-Time Performance 一个数据集
 （存档 `cymk-nyei` 的月度文件 + 最近一期 `gp3k-am4u`，两者字段相同）。

@@ -6,8 +6,10 @@ This project estimates, for a single scheduled bus trip, the probability that it
 reaches a rider's stop by a deadline the rider chooses, and the risk that it
 leaves the boarding stop before the rider gets there. It learns from the
 stop-level on-time records published by the City of Winnipeg, using only what is
-known the day before. The first version uses those records alone; the published
-schedule, weather and other conditions are added later.
+known the day before. The first version uses those records for a single route in
+one direction, plus daily weather, holidays, snow parking bans and stop-level
+ridership; more routes, the published schedule and other conditions are added
+later.
 
 Real-time apps answer "when will the next bus come". This project answers a
 planning question asked the evening before: how reliable is this particular
@@ -18,8 +20,9 @@ trip, and would an earlier trip or another route lower the risk?
 ## Status
 
 The feasibility check is complete: the data source supports per-departure
-probabilities for weekday daytime service, and the scope of the first version is
-set. No pipeline, model or application exists yet.
+probabilities for weekday daytime service. The first version is a model for one
+route in one direction (route 91 towards St. Norbert, about 80,000 rows). No
+pipeline, model or application exists yet.
 
 ## Data
 
